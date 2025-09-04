@@ -1,3 +1,5 @@
+const generateOtp = require("../utils/otp");
+
 const db = require("../config/knex");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
