@@ -25,6 +25,8 @@ class AuthService {
 
     // ✅ Try sending OTP first
     try {
+      console.log(process.env.EMAIL_USER);
+      
       await sendOtpEmail(email, otp);
     } catch (err) {
       console.error("❌ Failed to send OTP email:", err.message);

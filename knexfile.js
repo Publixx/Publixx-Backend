@@ -1,5 +1,7 @@
 require("dotenv").config();
 
+const isProduction = process.env.NODE_ENV === "production";
+
 module.exports = {
   development: {
     client: "pg",
@@ -9,7 +11,7 @@ module.exports = {
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
       port: process.env.DB_PORT,
-      ssl: false, // ❌ local dev doesn't use SSL
+      ssl: false, // local dev doesn't use SSL
     },
     migrations: {
       directory: "./src/db/migrations",
@@ -18,6 +20,7 @@ module.exports = {
       directory: "./src/db/seeds",
     },
   },
+
   production: {
     client: "pg",
     connection: {
@@ -26,7 +29,7 @@ module.exports = {
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
       port: process.env.DB_PORT,
-      ssl: { rejectUnauthorized: false }, // ✅ needed for AWS RDS
+      ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : false,
     },
     migrations: {
       directory: "./src/db/migrations",
