@@ -65,9 +65,34 @@ class AuthService {
       });
 
     return { message: "Email verified successfully" };
-}
+  }
 
+  async resendOtp(email) {
+    const user = await db("users").where({ email }).first();
+    if (!user) throw new Error("User not found");
 
+    if (user.is_verified) {
+      throw new Error("Email is already verified");
+    }
+
+    const otp = generateOtp();
+    const expiry = new Date(Date.now() + 15 * 60 * 1000);
+
+    // try sending new OTP
+    try {
+      await sendOtpEmail(email, otp);
+    } catch (err) {
+      console.error("❌ Failed to send OTP email:", err.message);
+      throw new Error("Could not send OTP. Please try again.");
+    }
+
+    // update user with new OTP
+    await db("users")
+      .where({ email })
+      .update({ otp_code: otp, otp_expiry: expiry });
+
+    return { message: "A new OTP has been sent to your email." };
+  }
 
   async login(username, password) {
   const user = await db("users").where({ username }).first();

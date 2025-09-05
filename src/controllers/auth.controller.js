@@ -21,6 +21,16 @@ class AuthController {
   }
 }
 
+  async resendOtp(req, res) {
+    try {
+      const { email } = req.body;
+      const result = await authService.resendOtp(email);
+      res.status(200).json(result);
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
+}
+
   async login(req, res) {
   try {
     const { username, password } = req.body;
