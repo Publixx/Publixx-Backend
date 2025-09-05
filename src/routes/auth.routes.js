@@ -2,12 +2,13 @@ const express = require("express");
 const router = express.Router();
 const authController = require("../controllers/auth.controller");
 
-// Option 1: arrow functions
+// Signup (sends OTP to email)
 router.post("/signup", (req, res) => authController.signup(req, res));
-router.post("/login", (req, res) => authController.login(req, res));
 
-// Option 2 (cleaner): bind
-// router.post("/signup", authController.signup.bind(authController));
-// router.post("/login", authController.login.bind(authController));
+// Verify email (enter OTP)
+router.post("/verify-email", (req, res) => authController.verifyEmail(req, res));
+
+// Login (only works after verification)
+router.post("/login", (req, res) => authController.login(req, res));
 
 module.exports = router;
