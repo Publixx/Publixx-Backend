@@ -95,7 +95,11 @@ class AuthService {
   }
 
   async login(username, password) {
-  const user = await db("users").where({ username }).first();
+  // case-insensitive match
+  const user = await db("users")
+    .whereRaw("LOWER(username) = ?", [username.toLowerCase()])
+    .first();
+
   if (!user) throw new Error("User not found");
 
   if (!user.is_verified) {
@@ -106,12 +110,19 @@ class AuthService {
   if (!match) throw new Error("Invalid password");
 
   const token = jwt.sign(
-    { id: user.id, username: user.username },
-    process.env.JWT_SECRET,
-    { expiresIn: "7d" }
-  );
+  {
+    id: user.id,
+    codename: user.codename,
+    email: user.email
+  },
+  process.env.JWT_SECRET,
+  { expiresIn: "7d" }
+);
 
-  return { token, user: { id: user.id, username: user.username, email: user.email } };
+  return {
+    token,
+    user: { id: user.id, username: user.username, email: user.email },
+  };
 }
 }
 

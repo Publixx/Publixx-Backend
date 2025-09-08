@@ -1,26 +1,27 @@
 const AWS = require("aws-sdk");
-const fs = require("fs");
+const { v4: uuidv4 } = require("uuid");
 const path = require("path");
 
-const s3 = new AWS.S3({ region: process.env.AWS_REGION });
+const s3 = new AWS.S3({
+  region: process.env.AWS_REGION,
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+});
 
-class S3Storage {
-  async upload(file, folder = "uploads") {
-    const fileStream = fs.createReadStream(file.path);
-    const key = `${folder}/${Date.now()}_${path.basename(file.originalname)}`;
+async function uploadMaskedPhoto(file) {
+  const fileExt = path.extname(file.originalname);
+  const fileKey = `profiles/${uuidv4()}${fileExt}`;
 
-    const params = {
-      Bucket: process.env.S3_BUCKET,
-      Key: key,
-      Body: fileStream,
-      ContentType: file.mimetype,
-      ACL: "private"
-    };
+  const params = {
+    Bucket: process.env.S3_BUCKET,
+    Key: fileKey,
+    Body: file.buffer,
+    ContentType: file.mimetype,
+  };
 
-    const res = await s3.upload(params).promise();
-    fs.unlinkSync(file.path);
-    return { url: res.Location, key };
-  }
+  await s3.upload(params).promise();
+
+  return `https://${process.env.S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`;
 }
 
-module.exports = new S3Storage();
+module.exports = { uploadMaskedPhoto };
