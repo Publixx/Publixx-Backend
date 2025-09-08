@@ -8,9 +8,10 @@ const s3 = new AWS.S3({
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
 });
 
-async function uploadMaskedPhoto(file) {
+async function uploadMaskedPhoto(file, userId) {
   const fileExt = path.extname(file.originalname);
-  const fileKey = `profiles/${uuidv4()}${fileExt}`;
+
+  const fileKey = `profiles/${userId}/${uuidv4()}${fileExt}`;
 
   const params = {
     Bucket: process.env.S3_BUCKET,
@@ -18,7 +19,10 @@ async function uploadMaskedPhoto(file) {
     Body: file.buffer,
     ContentType: file.mimetype,
   };
-
+  console.log("user id", userId);
+  console.log("fileeeee,",file);
+  
+  
   await s3.upload(params).promise();
 
   return `https://${process.env.S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`;

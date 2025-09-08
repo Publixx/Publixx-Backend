@@ -4,9 +4,9 @@ const { uploadMaskedPhoto } = require("./storage.s3.service");
 class ProfileService {
   async createOrUpdateProfile(user, { bio }, file) {
     let photoUrl = null;
-
+   
     if (file) {
-      photoUrl = await uploadMaskedPhoto(file);
+      photoUrl = await uploadMaskedPhoto(file,user.id);
     }
 
     const userId = user.id;
