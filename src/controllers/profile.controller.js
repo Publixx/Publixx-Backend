@@ -5,7 +5,8 @@ class ProfileController {
     try {
       const profile = await profileService.createOrUpdateProfile(req.user, req.body, req.file);
       console.log("req.file",req.file);
-      
+  console.log("req.body",req);
+        
       res.status(201).json(profile);
     } catch (err) {
       res.status(400).json({ error: err.message });
