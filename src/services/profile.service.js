@@ -39,6 +39,7 @@ class ProfileService {
     return {
       username,
       ...profile,
+      message: `Profile created/updated successfully ${Date.now()}`,
     };
   }
 
