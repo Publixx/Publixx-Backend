@@ -7,7 +7,9 @@ class ProfileService {
    
     if (file) {
       photoUrl = await uploadMaskedPhoto(file,user.id);
+      
     }
+    console.log("photoUrl-------",photoUrl);
 
     const userId = user.id;
     const username = user.username;
