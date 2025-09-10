@@ -11,15 +11,15 @@ class AuthController {
     }
   }
 
-  async verifyEmail(req, res) {
-  try {
-    const { email, otp } = req.body;
-    const result = await authService.verifyEmail(email, otp);
-    res.status(200).json(result);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
+async verifyEmail(req, res) {
+    try {
+      const { email, otp } = req.body;
+      const result = await authService.verifyEmail(email, otp);
+      res.json(result); // ✅ now returns token + user
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
   }
-}
 
   async resendOtp(req, res) {
     try {

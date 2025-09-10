@@ -50,21 +50,47 @@ class AuthService {
   async verifyEmail(email, otp) {
     const user = await db("users").where({ email }).first();
     if (!user) throw new Error("User not found");
+
     if (user.is_verified) throw new Error("Email already verified");
 
-    if (user.otp_code !== otp || new Date() > user.otp_expiry) {
-      throw new Error("Invalid or expired OTP");
+    if (!user.otp_code || !user.otp_expiry) {
+      throw new Error("OTP not generated");
     }
 
-    await db("users")
-      .where({ email })
+    if (user.otp_code !== otp) {
+      throw new Error("Invalid OTP");
+    }
+
+    if (new Date() > user.otp_expiry) {
+      throw new Error("OTP expired");
+    }
+
+    // ✅ Update user as verified
+    const [updatedUser] = await db("users")
+      .where({ id: user.id })
       .update({
         is_verified: true,
         otp_code: null,
         otp_expiry: null,
-      });
+      })
+      .returning(["id", "username", "email"]);
 
-    return { message: "Email verified successfully" };
+    // ✅ Auto-login (generate JWT)
+    const token = jwt.sign(
+      { id: updatedUser.id, username: updatedUser.username, email: updatedUser.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    return {
+      message: "Email verified successfully",
+      token,
+      user: {
+        id: updatedUser.id,
+        username: updatedUser.username,
+        email: updatedUser.email,
+      },
+    };
   }
 
   async resendOtp(email) {
