@@ -1,20 +1,22 @@
 const express = require("express");
-const router = express.Router();
 const multer = require("multer");
-const upload = multer();
-const authMiddleware = require("../middleware/auth.middleware");
 const profileController = require("../controllers/profile.controller");
+const authMiddleware = require("../middleware/auth.middleware");
 
-// Private (requires JWT)
-router.post("/", authMiddleware, upload.single("photo"), (req, res) =>
-  profileController.createOrUpdateProfile(req, res)
+const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
+
+router.post(
+  "/",
+  authMiddleware,
+  upload.single("photo"),
+  (req, res) => profileController.createOrUpdateProfile(req, res)
 );
 
-router.get("/", authMiddleware, (req, res) =>
-  profileController.getProfile(req, res)
+router.get("/me", authMiddleware, (req, res) =>
+  profileController.getMyProfile(req, res)
 );
 
-// Public (no JWT)
 router.get("/:username", (req, res) =>
   profileController.getPublicProfile(req, res)
 );

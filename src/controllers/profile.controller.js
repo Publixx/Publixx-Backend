@@ -3,18 +3,23 @@ const profileService = require("../services/profile.service");
 class ProfileController {
   async createOrUpdateProfile(req, res) {
     try {
-      const profile = await profileService.createOrUpdateProfile(req.user, req.body, req.file);
-         
-      res.status(201).json(profile);
+      console.log("DEBUG createOrUpdateProfile req.user:", req.user);
+      const user = req.user; // from authMiddleware
+      const file = req.file; // multer file
+      const { bio } = req.body;
+
+      const profile = await profileService.createOrUpdateProfile(user, file, bio);
+      return res.status(200).json(profile);
     } catch (err) {
-      res.status(400).json({ error: err.message });
+      console.error("Profile creation failed:", err && err.message ? err.message : err);
+      return res.status(400).json({ error: err.message || "Profile creation failed" });
     }
   }
 
-  async getProfile(req, res) {
+  async getMyProfile(req, res) {
     try {
       const profile = await profileService.getProfile(req.user);
-      res.status(200).json(profile);
+      res.json(profile);
     } catch (err) {
       res.status(400).json({ error: err.message });
     }

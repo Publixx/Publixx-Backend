@@ -1,12 +1,30 @@
 const express = require("express");
 const multer = require("multer");
-const { createSubmission, getUserSubmissions } = require("../controllers/submissions.controller");
-const auth = require("../middleware/auth.middleware");
+const authMiddleware = require("../middleware/auth.middleware");
+const SubmissionController = require("../controllers/submission.controller");
 
 const router = express.Router();
-const upload = multer({ dest: "/tmp" });
+const upload = multer({ storage: multer.memoryStorage() });
 
-router.post("/", auth, upload.single("photo"), createSubmission);
-router.get("/", auth, getUserSubmissions);
+// Create submission (upload photos/videos)
+router.post(
+  "/",
+  authMiddleware,
+  upload.fields([
+    { name: "photos", maxCount: 5 },
+    { name: "video", maxCount: 1 },
+  ]),
+  (req, res) => SubmissionController.createSubmission(req, res)
+);
+
+// Get submissions for the logged-in user
+router.get("/me", authMiddleware, (req, res) =>
+  SubmissionController.getUserSubmissions(req, res)
+);
+
+// Get submissions for a specific stage
+router.get("/stage/:stage", authMiddleware, (req, res) =>
+  SubmissionController.getStageSubmissions(req, res)
+);
 
 module.exports = router;
