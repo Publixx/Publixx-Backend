@@ -1,5 +1,5 @@
 const db = require("../config/knex");
-const { uploadMaskedPhoto } = require("./storage.s3.service");
+const { uploadMaskedPhoto, deleteMaskedPhoto } = require("./storage.s3.service");
 
 class ProfileService {
   /**
@@ -8,29 +8,38 @@ class ProfileService {
    * bio: string
    */
   async createOrUpdateProfile(user, file, bio) {
-    // Validate user object and id presence
     if (!user || !user.id) {
       throw new Error("Invalid user. Make sure you are authenticated.");
     }
 
     const userId = user.id;
 
-    // Confirm that the user exists in DB (prevents FK violation)
     const dbUser = await db("users").where({ id: userId }).first();
-    console.log("dbuser", dbUser);
-    
-    if (!dbUser) {
-      throw new Error("User not found in database.");
-    }
+    if (!dbUser) throw new Error("User not found in database.");
 
     let photoUrl = null;
 
+    // Fetch existing profile (if any)
+    const existingProfile = await db("profiles").where({ user_id: userId }).first();
+
     if (file) {
-      // Upload masked profile photo (no mask detection here — as requested)
+      // Delete old image from S3 if exists
+      if (existingProfile && existingProfile.masked_photo_url) {
+        try {
+          await deleteMaskedPhoto(existingProfile.masked_photo_url);
+        } catch (err) {
+          console.error("❌ Failed to delete old image from S3:", err.message);
+        }
+      }
+
+      // Upload new image
       photoUrl = await uploadMaskedPhoto(file, userId);
+    } else if (existingProfile) {
+      // keep existing photo if no new file
+      photoUrl = existingProfile.masked_photo_url;
     }
 
-    // Insert or update profile (onConflict ensures only one profile per user)
+    // Insert or update profile
     const [profile] = await db("profiles")
       .insert({
         user_id: userId,

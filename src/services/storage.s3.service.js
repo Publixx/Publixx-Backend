@@ -30,6 +30,26 @@ async function uploadMaskedPhoto(file, userId) {
   return `https://${process.env.S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`;
 }
 
+async function deleteMaskedPhoto(url) {
+  if (!url) return;
+
+  try {
+    // Extract the key from the URL
+    const urlObj = new URL(url);
+    const fileKey = urlObj.pathname.substring(1); // remove leading /
+
+    const params = {
+      Bucket: process.env.S3_BUCKET,
+      Key: fileKey,
+    };
+
+    console.log("Deleting old profile photo:", fileKey);
+    await s3.deleteObject(params).promise();
+  } catch (err) {
+    console.error("❌ Failed to delete S3 object:", err.message);
+  }
+}
+
 /**
  * Upload submission (image/video) for a game stage
  * stored under: submissions/{stageId}/{userId}/{uuid}.{ext}
@@ -54,5 +74,6 @@ async function uploadSubmission(file, stageId, userId) {
 
 module.exports = {
   uploadMaskedPhoto,
+  deleteMaskedPhoto,
   uploadSubmission,
 };
