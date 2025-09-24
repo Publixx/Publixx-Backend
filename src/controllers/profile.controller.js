@@ -19,6 +19,8 @@ class ProfileController {
   async getMyProfile(req, res) {
     try {
       const profile = await profileService.getProfile(req.user);
+      console.log("profile", profile);
+      
       res.json(profile);
     } catch (err) {
       res.status(400).json({ error: err.message });

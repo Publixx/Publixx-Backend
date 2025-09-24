@@ -50,12 +50,16 @@ class ProfileService {
   }
 
   async getProfile(user) {
+    console.log("user in getProfile:", user);
+    
     if (!user || !user.id) return null;
-
+    console.log(user.id);
+    
     const profile = await db("profiles")
-      .select("bio", "masked_photo_url")
+      .select("username","bio", "masked_photo_url")
       .where({ user_id: user.id })
       .first();
+console.log("profile in getProfile:", profile);
 
     if (!profile) return null;
 
