@@ -27,7 +27,7 @@ class SubmissionService {
       .insert({
         user_id: userId,
         stage: parseInt(stage, 10),
-        photos: db.raw("?::jsonb", [JSON.stringify(photoUrls)]), // 👈 FIX
+        photos: db.raw("?::jsonb", [JSON.stringify(photoUrls)]),
         video_url: videoUrl,
         status: "pending",
       })

@@ -34,6 +34,7 @@ class ProfileService {
     const [profile] = await db("profiles")
       .insert({
         user_id: userId,
+        username: user.username,
         bio,
         masked_photo_url: photoUrl,
       })
@@ -50,21 +51,18 @@ class ProfileService {
   }
 
   async getProfile(user) {
-    console.log("user in getProfile:", user);
-    
     if (!user || !user.id) return null;
-    console.log(user.id);
     
     const profile = await db("profiles")
       .select("username","bio", "masked_photo_url")
       .where({ user_id: user.id })
       .first();
-console.log("profile in getProfile:", profile);
 
     if (!profile) return null;
 
     return {
       username: user.username,
+      user_id: user.id,
       ...profile,
     };
   }
