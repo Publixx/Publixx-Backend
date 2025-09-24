@@ -1,6 +1,18 @@
 const db = require("../config/knex");
 const { uploadSubmission } = require("./storage.s3.service");
 
+function safeParseJSON(value) {
+  if (!value) return [];
+  if (typeof value === "string") {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return [];
+    }
+  }
+  return value;
+}
+
 class SubmissionService {
   async createSubmission(user, files, stage) {
     if (!user || !user.id) throw new Error("Authenticated user required");
@@ -22,7 +34,7 @@ class SubmissionService {
       videoUrl = await uploadSubmission(files.video, stage, userId);
     }
 
-    // ✅ Store photos as JSON string, cast to JSONB
+    // Insert into DB
     const [submission] = await db("submissions")
       .insert({
         user_id: userId,
@@ -35,7 +47,7 @@ class SubmissionService {
 
     return {
       ...submission,
-      photos: submission.photos || [],
+      photos: safeParseJSON(submission.photos),
     };
   }
 
@@ -46,7 +58,7 @@ class SubmissionService {
 
     return rows.map((r) => ({
       ...r,
-      photos: r.photos || [],
+      photos: safeParseJSON(r.photos),
     }));
   }
 
@@ -57,7 +69,7 @@ class SubmissionService {
 
     return rows.map((r) => ({
       ...r,
-      photos: r.photos || [],
+      photos: safeParseJSON(r.photos),
     }));
   }
 }

@@ -6,46 +6,56 @@ const { sendOtpEmail } = require("../utils/email");
 
 class AuthService {
   async register(username, email, password) {
-    if (!username || !email || !password) {
-      throw new Error("username, email and password are required");
-    }
-
-    // check duplicates
-    const existingUser = await db("users")
-      .where({ username })
-      .orWhere({ email })
-      .first();
-    if (existingUser) {
-      throw new Error("username or email already taken");
-    }
-
-    const hashed = await bcrypt.hash(password, 10);
-    const otp = generateOtp();
-    const expiry = new Date(Date.now() + 15 * 60 * 1000);
-
-    // ✅ Try sending OTP first
-    try {
-      console.log(process.env.EMAIL_USER);
-      
-      await sendOtpEmail(email, otp);
-    } catch (err) {
-      console.error("❌ Failed to send OTP email:", err.message);
-      throw new Error("Could not send verification email. Please try again.");
-    }
-
-    // ✅ Only insert user if email sent successfully
-    const [user] = await db("users")
-      .insert({
-        username,
-        email,
-        password: hashed,
-        otp_code: otp,
-        otp_expiry: expiry,
-      })
-      .returning(["id", "username", "email", "is_verified"]);
-
-    return { message: "Signup successful. Please verify your email.", user };
+  if (!username || !email || !password) {
+    throw new Error("username, email and password are required");
   }
+
+  // check duplicates
+  const existingUser = await db("users")
+    .where({ username })
+    .orWhere({ email })
+    .first();
+  if (existingUser) {
+    throw new Error("username or email already taken");
+  }
+
+  const hashed = await bcrypt.hash(password, 10);
+  const otp = generateOtp();
+  const expiry = new Date(Date.now() + 15 * 60 * 1000);
+
+  // Try sending OTP first
+  try {
+    await sendOtpEmail(email, otp);
+  } catch (err) {
+    console.error("❌ Failed to send OTP email:", err.message);
+    throw new Error("Could not send verification email. Please try again.");
+  }
+
+  // Insert user
+  const [user] = await db("users")
+    .insert({
+      username,
+      email,
+      password: hashed,
+      otp_code: otp,
+      otp_expiry: expiry,
+    })
+    .returning(["id", "username", "email", "is_verified"]);
+
+  // ✅ Insert profile for this user immediately after signup
+  await db("profiles")
+    .insert({
+      user_id: user.id,
+      username: user.username,
+      bio: "", // default empty bio
+      masked_photo_url: null, // default no photo
+    })
+    .onConflict("user_id")
+    .ignore(); // just in case, ignore conflict
+
+  return { message: "Signup successful. Please verify your email.", user };
+}
+
 
   async verifyEmail(email, otp) {
     const user = await db("users").where({ email }).first();

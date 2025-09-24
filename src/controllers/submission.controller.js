@@ -12,7 +12,7 @@ class SubmissionController {
         photos: req.files?.photos || [],
         video: req.files?.video ? req.files.video[0] : null,
       };
-
+      console.log("📸 Incoming files:", req.files);
       const submission = await SubmissionService.createSubmission(
         req.user,
         files,
