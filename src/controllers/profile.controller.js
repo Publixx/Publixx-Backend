@@ -3,7 +3,6 @@ const profileService = require("../services/profile.service");
 class ProfileController {
   async createOrUpdateProfile(req, res) {
     try {
-      console.log("DEBUG createOrUpdateProfile req.user:", req.user);
       const user = req.user; // from authMiddleware
       const file = req.file; // multer file
       const { bio } = req.body;
@@ -19,7 +18,6 @@ class ProfileController {
   async getMyProfile(req, res) {
     try {
       const profile = await profileService.getProfile(req.user);
-      console.log("profile", profile);
       
       res.json(profile);
     } catch (err) {
