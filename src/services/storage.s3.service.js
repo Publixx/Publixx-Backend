@@ -1,6 +1,7 @@
 const AWS = require("aws-sdk");
 const { v4: uuidv4 } = require("uuid");
 const path = require("path");
+const sharp = require("sharp"); // 👈 add sharp for compression
 
 const s3 = new AWS.S3({
   region: process.env.AWS_REGION,
@@ -9,21 +10,26 @@ const s3 = new AWS.S3({
 });
 
 /**
- * Upload masked profile photo
- * stored under: profiles/{userId}/{uuid}.{ext}
+ * Upload masked profile photo (compressed)
+ * stored under: profiles/{userId}/{uuid}.jpeg
  */
 async function uploadMaskedPhoto(file, userId) {
-  const fileExt = path.extname(file.originalname);
-  const fileKey = `profiles/${userId}/${uuidv4()}${fileExt}`;
+  const fileKey = `profiles/${userId}/${uuidv4()}.jpeg`;
+
+  // ✅ Compress and convert to JPEG
+  const compressedBuffer = await sharp(file.buffer)
+    .resize(600, 600, { fit: "inside" }) // max 600x600
+    .jpeg({ quality: 75 }) // compress
+    .toBuffer();
 
   const params = {
     Bucket: process.env.S3_BUCKET,
     Key: fileKey,
-    Body: file.buffer,
-    ContentType: file.mimetype,
+    Body: compressedBuffer,
+    ContentType: "image/jpeg",
   };
 
-  console.log("Uploading profile photo for user:", userId);
+  console.log("Uploading compressed profile photo for user:", userId);
 
   await s3.upload(params).promise();
 
@@ -55,14 +61,26 @@ async function deleteMaskedPhoto(url) {
  * stored under: submissions/{stageId}/{userId}/{uuid}.{ext}
  */
 async function uploadSubmission(file, stageId, userId) {
-  const fileExt = path.extname(file.originalname);
-  const fileKey = `submissions/${stageId}/${userId}/${uuidv4()}${fileExt}`;
+  const ext = path.extname(file.originalname).toLowerCase();
+  let fileKey = `submissions/${stageId}/${userId}/${uuidv4()}${ext}`;
+  let fileBuffer = file.buffer;
+  let contentType = file.mimetype;
+
+  // ✅ If image, compress before upload
+  if (file.mimetype.startsWith("image/")) {
+    fileKey = `submissions/${stageId}/${userId}/${uuidv4()}.jpeg`;
+    fileBuffer = await sharp(file.buffer)
+      .resize(1280, 1280, { fit: "inside" }) // limit size
+      .jpeg({ quality: 75 })
+      .toBuffer();
+    contentType = "image/jpeg";
+  }
 
   const params = {
     Bucket: process.env.S3_BUCKET,
     Key: fileKey,
-    Body: file.buffer,
-    ContentType: file.mimetype,
+    Body: fileBuffer,
+    ContentType: contentType,
   };
 
   console.log(`Uploading submission for user ${userId}, stage ${stageId}`);
